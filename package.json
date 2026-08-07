@@ -1,9 +1,9 @@
 {
   "name": "am-tst-gestao-sst",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Backend Node.js + SQLite para o sistema AM TST",
+  "description": "Sistema AM TST de Gestão em Saúde e Segurança do Trabalho com Node.js e SQLite nativo",
   "main": "server.js",
-  "scripts": { "start": "node server.js", "dev": "node --watch server.js" },
-  "engines": { "node": ">=22.5.0" }
+  "scripts": {"start":"node server.js","dev":"node --watch server.js"},
+  "engines": {"node": ">=22.5.0"}
 }
