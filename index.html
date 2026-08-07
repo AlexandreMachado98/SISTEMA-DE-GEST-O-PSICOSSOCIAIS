@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AM TST — Gestão SST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1524;
+    --ink-2:#122036;
+    --ink-3:#16283f;
+    --paper:#F3F1EA;
+    --paper-2:#FFFFFF;
+    --teal:#0E7C74;
+    --teal-dark:#0A5F59;
+    --amber:#E2A13A;
+    --charcoal:#1B2530;
+    --slate:#5E6B78;
+    --slate-soft:#8792A0;
+    --line:#E4E0D5;
+    --line-dark:rgba(255,255,255,0.12);
+    --danger:#C4562F;
+    --radius:16px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--charcoal);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk',sans-serif;
+    letter-spacing:-0.01em;
+  }
+  .mono{ font-family:'IBM Plex Mono',monospace; letter-spacing:0.02em; }
+
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* shared: hazard stripe divider — signature motif */
+  .hazard-rule{
+    height:6px;
+    width:100%;
+    background:repeating-linear-gradient(
+      -45deg,
+      var(--amber) 0px, var(--amber) 14px,
+      var(--ink) 14px, var(--ink) 28px
+    );
+    opacity:0.9;
+  }
+
+  /* shared: topbar */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 40px;
+    background:var(--paper-2);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:38px;height:38px;
+    border-radius:9px;
+    background:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:20px;height:20px;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1;}
+  .brand-text .name{font-family:'Space Grotesk';font-weight:700;font-size:19px;letter-spacing:0.01em;}
+  .brand-text .sub{font-size:11px;color:var(--slate);font-family:'IBM Plex Mono';letter-spacing:0.04em;text-transform:uppercase;}
+
+  .topbar-right{display:flex;align-items:center;gap:18px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--slate);
+    position:relative;
+  }
+  .icon-btn svg{width:17px;height:17px;}
+  .icon-btn .dot{
+    position:absolute;top:7px;right:7px;
+    width:7px;height:7px;border-radius:50%;
+    background:var(--amber);border:1.5px solid var(--paper-2);
+  }
+  .partner-btn{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 16px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    font-size:13.5px;font-weight:600;
+  }
+  .user-chip{display:flex;align-items:center;gap:10px;}
+  .user-chip .info{text-align:right;line-height:1.25;}
+  .user-chip .info .n{font-size:13.5px;font-weight:600;}
+  .user-chip .info .e{font-size:11.5px;color:var(--slate-soft);}
+  .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,var(--teal),var(--teal-dark));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk';font-weight:700;font-size:13px;
+  }
+
+  /* shared: buttons + form controls reused across both views */
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:10px;
+    font-size:13.5px;font-weight:600;
+    border:1px solid var(--ink);
+    transition:background .15s ease;
+  }
+  .btn-primary:hover{background:var(--ink-2);}
+  .btn-primary svg{width:15px;height:15px;color:var(--amber);}
+
+  .search-box{
+    flex:1;min-width:240px;
+    display:flex;align-items:center;gap:10px;
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:11px;padding:11px 16px;
+  }
+  .search-box svg{width:16px;height:16px;color:var(--slate-soft);flex-shrink:0;}
+  .search-box input{
+    border:none;outline:none;background:none;
+    font-family:inherit;font-size:13.5px;width:100%;color:var(--charcoal);
+  }
+  .search-box input::placeholder{color:var(--slate-soft);}
+  .toolbar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+
+  /* ===================================================================
+     VIEW: DASHBOARD
+  =================================================================== */
+  #view-dashboard .hero{
+    position:relative;
+    background:
+      radial-gradient(1100px 480px at 85% -10%, rgba(14,124,116,0.35), transparent 60%),
+      linear-gradient(155deg, var(--ink) 0%, var(--ink-2) 55%, var(--ink-3) 100%);
+    color:#fff;
+    padding:48px 40px 46px;
+    overflow:hidden;
+  }
+  #view-dashboard .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:linear-gradient(to bottom, black, transparent 88%);
+    pointer-events:none;
+  }
+  #view-dashboard .hero-inner{position:relative;z-index:1;max-width:1280px;margin:0 auto;}
+  #view-dashboard .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 14px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.16);
+    font-size:12.5px;font-weight:600;
+    margin-bottom:18px;
+  }
+  #view-dashboard .badge svg{width:14px;height:14px;color:var(--amber);}
+  #view-dashboard .hero h1{
+    font-size:40px;
+    font-weight:700;
+    margin:0 0 8px;
+  }
+  #view-dashboard .hero p.lead{
+    font-size:15.5px;
+    color:rgba(255,255,255,0.62);
+    margin:0 0 34px;
+    max-width:460px;
+  }
+
+  #view-dashboard .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  #view-dashboard .stat-card{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    display:flex;align-items:center;gap:16px;
+    backdrop-filter:blur(6px);
+  }
+  .stat-ring{
+    width:52px;height:52px;border-radius:50%;
+    flex-shrink:0;
+    display:grid;place-items:center;
+    background:conic-gradient(var(--teal) var(--pct,30%), rgba(255,255,255,0.12) 0);
+  }
+  .stat-ring .hole{
+    width:38px;height:38px;border-radius:50%;
+    background:#0E1A2C;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+  }
+  .stat-ring svg{width:17px;height:17px;}
+  #view-dashboard .stat-num{font-family:'Space Grotesk';font-size:26px;font-weight:700;line-height:1;}
+  #view-dashboard .stat-label{font-size:12.5px;color:rgba(255,255,255,0.55);margin-top:4px;}
+
+  .section{max-width:1280px;margin:0 auto;padding:44px 40px 0;}
+  .section-head{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    margin-bottom:22px;flex-wrap:wrap;gap:14px;
+  }
+  .section-head h2{font-size:23px;font-weight:700;margin:0 0 4px;}
+  .section-head .desc{font-size:13.5px;color:var(--slate);}
+  .eyebrow{
+    font-family:'IBM Plex Mono';font-size:11px;letter-spacing:0.09em;
+    text-transform:uppercase;color:var(--teal-dark);font-weight:600;
+    margin:0 0 6px;display:block;
+  }
+
+  .btn-ghost{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;font-weight:600;color:var(--teal-dark);
+    padding:0;border:none;background:none;
+  }
+  .btn-ghost svg{width:14px;height:14px;transition:transform .15s ease;}
+  .btn-ghost:hover svg{transform:translateX(3px);}
+
+  .tool-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+  }
+  .tool-card{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    display:flex;flex-direction:column;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .tool-card::after{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--accent, var(--teal));
+    opacity:0; transition:opacity .16s ease;
+  }
+  .tool-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 30px -18px rgba(11,21,36,0.35);
+    border-color:transparent;
+  }
+  .tool-card:hover::after{opacity:1;}
+  .tool-icon{
+    width:44px;height:44px;border-radius:11px;
+    background:var(--accent-soft, rgba(14,124,116,0.1));
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;
+  }
+  .tool-icon svg{width:21px;height:21px;color:var(--accent, var(--teal));}
+  .tool-card h3{font-size:16.5px;font-weight:700;margin:0 0 6px;}
+  .tool-card p{font-size:13px;color:var(--slate);margin:0 0 16px;line-height:1.5;flex-grow:1;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+  .tag{
+    font-family:'IBM Plex Mono';
+    font-size:10.5px;font-weight:500;
+    padding:4px 9px;border-radius:6px;
+    background:var(--paper);
+    color:var(--slate);
+    border:1px solid var(--line);
+  }
+  .tool-card .go{
+    margin-top:auto;
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;font-weight:600;color:var(--charcoal);
+  }
+  .tool-card .go svg{width:14px;height:14px;transition:transform .15s ease;}
+  .tool-card:hover .go svg{transform:translateX(3px);}
+
+  .sort-box{
+    display:flex;align-items:center;gap:8px;
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:11px;padding:11px 16px;font-size:13px;font-weight:500;color:var(--slate);
+  }
+  .sort-box svg{width:14px;height:14px;}
+
+  .plan-card{
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;margin-bottom:20px;
+  }
+  .plan-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .plan-icon{
+    width:42px;height:42px;border-radius:11px;
+    background:rgba(226,161,58,0.14);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .plan-icon svg{width:19px;height:19px;color:var(--amber);}
+  .plan-top .n{font-size:15px;font-weight:700;}
+  .plan-top .d{font-size:12.5px;color:var(--slate);}
+  .progress-track{height:8px;border-radius:999px;background:var(--paper);overflow:hidden;}
+  .progress-fill{height:100%;width:5%;border-radius:999px;background:linear-gradient(90deg,var(--teal),var(--teal-dark));}
+
+  .company-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .company-card{
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;
+    display:flex;flex-direction:column;
+    transition:box-shadow .16s ease, transform .16s ease;
+  }
+  .company-card:hover{transform:translateY(-3px);box-shadow:0 16px 30px -18px rgba(11,21,36,0.35);}
+  .company-banner{
+    height:110px;
+    background:
+      linear-gradient(155deg, rgba(14,124,116,0.14), rgba(11,21,36,0.05)),
+      var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .company-banner .mark{
+    width:52px;height:52px;border-radius:12px;
+    background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk';font-weight:700;font-size:18px;
+  }
+  .company-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px;flex-grow:1;}
+  .company-body .cname{font-size:15px;font-weight:700;line-height:1.3;}
+  .company-body .cnpj{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--slate-soft);}
+  .company-actions{display:flex;gap:6px;margin-top:2px;}
+  .company-actions button{
+    width:30px;height:30px;border-radius:8px;
+    border:1px solid var(--line);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;color:var(--slate);
+  }
+  .company-actions button:hover{color:var(--charcoal);border-color:var(--slate-soft);}
+  .company-actions button svg{width:14px;height:14px;}
+  .company-actions button.danger:hover{color:var(--danger);border-color:var(--danger);}
+  .risk-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:600;
+    padding:5px 10px;border-radius:999px;
+    background:rgba(14,124,116,0.1);color:var(--teal-dark);
+    width:fit-content;
+  }
+  .risk-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);}
+  .access-btn{
+    margin-top:auto;
+    text-align:center;
+    padding:11px;border-radius:10px;
+    background:var(--paper);border:1px solid var(--line);
+    font-size:13px;font-weight:600;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .company-card:hover .access-btn{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .team-card{
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:var(--radius);padding:26px 28px;
+  }
+  .team-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:6px;}
+  .team-head h2{display:flex;align-items:center;gap:10px;font-size:19px;margin:0 0 6px;}
+  .team-head h2 svg{width:19px;height:19px;color:var(--teal);}
+  .team-head p{font-size:13px;color:var(--slate);margin:0;max-width:460px;}
+  .invite-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--ink);color:#fff;padding:10px 16px;
+    border-radius:10px;font-size:13px;font-weight:600;border:none;
+  }
+  .invite-btn svg{width:14px;height:14px;color:var(--amber);}
+  .team-sub{
+    font-family:'IBM Plex Mono';font-size:10.5px;letter-spacing:0.08em;
+    color:var(--slate-soft);text-transform:uppercase;
+    margin:22px 0 12px;
+  }
+  .member-row{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 16px;border:1px solid var(--line);border-radius:12px;
+  }
+  .member-row .info{flex-grow:1;}
+  .member-row .n{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .member-row .e{font-size:12.5px;color:var(--slate-soft);}
+  .owner-chip{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:10.5px;font-weight:700;
+    padding:3px 9px;border-radius:999px;
+    background:var(--ink);color:#fff;
+  }
+  .owner-chip svg{width:10px;height:10px;color:var(--amber);}
+
+  footer{
+    margin-top:60px;
+    background:var(--ink);color:rgba(255,255,255,0.55);
+    padding:40px 40px 26px;
+  }
+  .footer-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;}
+  .footer-brand{display:flex;gap:12px;align-items:flex-start;max-width:420px;}
+  .footer-brand p{font-size:13px;line-height:1.6;margin:10px 0 0;color:rgba(255,255,255,0.4);}
+  .footer-col h4{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin:0 0 12px;font-weight:600;}
+  .footer-col a{display:flex;align-items:center;gap:8px;font-size:13.5px;color:rgba(255,255,255,0.75);margin-bottom:10px;}
+  .footer-col a svg{width:14px;height:14px;color:var(--amber);}
+  .footer-bottom{
+    max-width:1280px;margin:26px auto 0;padding-top:20px;
+    border-top:1px solid rgba(255,255,255,0.1);
+    font-size:12px;color:rgba(255,255,255,0.35);
+  }
+
+  @media (max-width: 1080px){
+    .tool-grid{grid-template-columns:repeat(2,1fr);}
+    .company-grid{grid-template-columns:repeat(2,1fr);}
+    #view-dashboard .stat-row{grid-template-columns:1fr;}
+  }
+  @media (max-width: 680px){
+    .topbar{padding:14px 18px;}
+    #view-dashboard .hero{padding:34px 18px;}
+    .section{padding:34px 18px 0;}
+    .tool-grid{grid-template-columns:1fr;}
+    .company-grid{grid-template-columns:1fr;}
+    #view-dashboard .hero h1{font-size:30px;}
+    .user-chip .info{display:none;}
+  }
+
+  /* ===================================================================
+     VIEW: RISCOS PSICOSSOCIAIS  (all scoped under #view-riscos)
+  =================================================================== */
+  #view-riscos{display:none;}
+
+  #view-riscos .back-pill{
+    position:fixed;top:18px;left:18px;z-index:40;
+    display:flex;align-items:center;gap:8px;
+    background:var(--paper-2);border:1px solid var(--line);
+    padding:9px 15px;border-radius:11px;font-size:13px;font-weight:600;
+    box-shadow:0 8px 20px -12px rgba(11,21,36,0.3);
+  }
+  #view-riscos .back-pill svg{width:15px;height:15px;}
+
+  #view-riscos .hero{
+    position:relative;color:#fff;padding:30px 40px 0;overflow:hidden;
+    background:radial-gradient(1100px 480px at 85% -10%, rgba(14,124,116,0.35), transparent 60%),
+      linear-gradient(155deg, var(--ink) 0%, var(--ink-2) 55%, var(--ink-3) 100%);
+  }
+  #view-riscos .hero::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
+    background-size:42px 42px;mask-image:linear-gradient(to bottom, black, transparent 88%);pointer-events:none;
+  }
+  #view-riscos .hero-inner{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding-bottom:26px;}
+  #view-riscos .crumb{display:flex;align-items:center;gap:8px;font-size:12.5px;color:rgba(255,255,255,0.5);margin-bottom:20px;}
+  #view-riscos .crumb svg{width:13px;height:13px;}
+  #view-riscos .badge{
+    display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);
+    font-size:12.5px;font-weight:600;margin-bottom:16px;
+  }
+  #view-riscos .badge svg{width:14px;height:14px;color:var(--amber);}
+  #view-riscos .hero-top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:22px;}
+  #view-riscos .hero h1{font-size:32px;font-weight:700;margin:0 0 8px;display:flex;align-items:center;gap:12px;}
+  #view-riscos .hero h1 svg{width:28px;height:28px;color:var(--teal);background:rgba(14,124,116,0.18);padding:6px;border-radius:11px;box-sizing:content-box;}
+  #view-riscos .hero p.lead{font-size:14.5px;color:rgba(255,255,255,0.6);margin:0;max-width:480px;}
+  #view-riscos .hero-actions{display:flex;gap:10px;flex-shrink:0;}
+
+  #view-riscos .btn-outline{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.06);color:#fff;
+    padding:11px 16px;border-radius:10px;font-size:13px;font-weight:600;
+    border:1px solid rgba(255,255,255,0.2);
+  }
+  #view-riscos .btn-outline svg{width:15px;height:15px;}
+  #view-riscos .btn-amber{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--amber);color:var(--ink);
+    padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700;
+    border:1px solid var(--amber);
+  }
+  #view-riscos .btn-amber svg{width:15px;height:15px;}
+
+  #view-riscos .tabs{display:flex;gap:6px;margin-top:26px;position:relative;z-index:1;}
+  #view-riscos .tab-btn{
+    display:flex;align-items:center;gap:9px;
+    padding:13px 20px;border-radius:12px 12px 0 0;
+    font-size:13.5px;font-weight:600;color:rgba(255,255,255,0.55);
+    background:rgba(255,255,255,0.04);border:1px solid transparent;border-bottom:none;
+  }
+  #view-riscos .tab-btn svg{width:16px;height:16px;}
+  #view-riscos .tab-btn.active{background:var(--paper);color:var(--charcoal);}
+
+  #view-riscos .content-wrap{max-width:1280px;margin:0 auto;padding:0 40px 60px;}
+  #view-riscos .method-panel{display:none;}
+  #view-riscos .method-panel.active{display:block;}
+
+  #view-riscos .method-strip{
+    background:var(--paper-2);border:1px solid var(--line);border-top:none;
+    border-radius:0 14px 14px 14px;
+    padding:20px 26px;margin-bottom:24px;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  #view-riscos .method-strip .m-title{font-size:15.5px;font-weight:700;margin-bottom:3px;}
+  #view-riscos .method-strip .m-desc{font-size:12.5px;color:var(--slate);}
+  #view-riscos .method-tag{
+    font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;
+    padding:6px 12px;border-radius:999px;background:rgba(14,124,116,0.1);color:var(--teal-dark);
+    white-space:nowrap;
+  }
+
+  #view-riscos .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  #view-riscos .stat-card{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;display:flex;align-items:center;gap:14px;
+  }
+  #view-riscos .stat-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent-soft);}
+  #view-riscos .stat-icon svg{width:19px;height:19px;color:var(--accent);}
+  #view-riscos .stat-num{font-family:'Space Grotesk';font-size:23px;font-weight:700;line-height:1;}
+  #view-riscos .stat-label{font-size:12px;color:var(--slate);margin-top:3px;}
+
+  #view-riscos .filter-box{
+    display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);
+    border-radius:11px;padding:11px 16px;font-size:13px;font-weight:500;color:var(--slate);
+  }
+  #view-riscos .filter-box svg{width:14px;height:14px;}
+
+  #view-riscos .list-card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:30px;}
+  #view-riscos .list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  #view-riscos .list-head h2{font-size:17px;font-weight:700;margin:0;}
+
+  #view-riscos .empty-state{padding:60px 20px;text-align:center;}
+  #view-riscos .empty-icon{
+    width:64px;height:64px;border-radius:16px;margin:0 auto 18px;
+    background:var(--paper);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #view-riscos .empty-icon svg{width:28px;height:28px;color:var(--slate-soft);}
+  #view-riscos .empty-state h3{font-size:16.5px;font-weight:700;margin:0 0 6px;}
+  #view-riscos .empty-state p{font-size:13.5px;color:var(--slate);margin:0 0 22px;}
+
+  #view-riscos .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:30px;}
+  #view-riscos .flow-step{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:14px;
+    padding:20px;position:relative;
+  }
+  #view-riscos .flow-step .num{
+    font-family:'IBM Plex Mono';font-size:11px;font-weight:700;color:var(--teal-dark);
+    background:rgba(14,124,116,0.1);width:26px;height:26px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;margin-bottom:12px;
+  }
+  #view-riscos .flow-step h4{font-size:13.5px;font-weight:700;margin:0 0 5px;}
+  #view-riscos .flow-step p{font-size:12px;color:var(--slate);margin:0;line-height:1.5;}
+
+  @media (max-width:1080px){
+    #view-riscos .stat-row{grid-template-columns:repeat(2,1fr);}
+    #view-riscos .flow{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:680px){
+    #view-riscos .hero{padding:70px 18px 0;}
+    #view-riscos .content-wrap{padding:0 18px 40px;}
+    #view-riscos .stat-row{grid-template-columns:1fr;}
+    #view-riscos .flow{grid-template-columns:1fr;}
+    #view-riscos .tabs{overflow-x:auto;}
+  }
+
+  /* ===================================================================
+     VIEW: NOVA AVALIAÇÃO  (all scoped under #view-nova)
+  =================================================================== */
+  #view-nova{display:none;}
+
+  #view-nova .back-pill{
+    position:fixed;top:18px;left:18px;z-index:40;
+    display:flex;align-items:center;gap:8px;
+    background:var(--paper-2);border:1px solid var(--line);
+    padding:9px 15px;border-radius:11px;font-size:13px;font-weight:600;
+    box-shadow:0 8px 20px -12px rgba(11,21,36,0.3);
+  }
+  #view-nova .back-pill svg{width:15px;height:15px;}
+
+  #view-nova .nv-header{
+    max-width:1280px;margin:0 auto;padding:78px 40px 0;
+    display:flex;align-items:flex-start;gap:14px;
+  }
+  #view-nova .nv-back{
+    width:34px;height:34px;border-radius:9px;flex-shrink:0;margin-top:3px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);background:var(--paper-2);color:var(--slate);
+  }
+  #view-nova .nv-back svg{width:16px;height:16px;}
+  #view-nova .nv-header h1{
+    font-size:26px;font-weight:700;margin:0 0 4px;
+    display:flex;align-items:center;gap:10px;
+  }
+  #view-nova .nv-header h1 svg{
+    width:22px;height:22px;color:var(--teal);
+    background:rgba(14,124,116,0.1);padding:6px;border-radius:9px;box-sizing:content-box;
+  }
+  #view-nova .nv-header p{font-size:13.5px;color:var(--slate);margin:0;}
+
+  #view-nova .nv-wrap{
+    max-width:1280px;margin:0 auto;padding:26px 40px 60px;
+    display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start;
+  }
+
+  #view-nova .form-card{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 28px;margin-bottom:22px;
+  }
+  #view-nova .form-card h2{font-size:17px;font-weight:700;margin:0 0 3px;}
+  #view-nova .form-card > .fc-desc{font-size:12.5px;color:var(--slate);margin:0 0 22px;}
+
+  #view-nova .field{margin-bottom:20px;}
+  #view-nova .field label{
+    display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:var(--charcoal);
+  }
+  #view-nova .field label .req{color:var(--danger);}
+  #view-nova .field input[type="text"],
+  #view-nova .field input[type="date"],
+  #view-nova .field input[type="number"],
+  #view-nova .field textarea{
+    width:100%;font-family:inherit;font-size:13.5px;color:var(--charcoal);
+    background:var(--paper);border:1px solid var(--line);border-radius:11px;
+    padding:12px 14px;outline:none;transition:border-color .15s ease;
+  }
+  #view-nova .field input:focus,
+  #view-nova .field textarea:focus{border-color:var(--teal);}
+  #view-nova .field textarea{resize:vertical;min-height:90px;font-family:inherit;}
+  #view-nova .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+  #view-nova .company-picker{position:relative;}
+  #view-nova .company-select{
+    width:100%;appearance:none;-webkit-appearance:none;
+    font-family:inherit;font-size:13.5px;font-weight:600;color:var(--charcoal);
+    background:var(--paper) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%235E6B78" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 14px center;
+    background-size:14px;
+    border:1px solid var(--line);border-radius:11px;
+    padding:12px 40px 12px 14px;outline:none;cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  #view-nova .company-select:focus{border-color:var(--teal);}
+
+  #view-nova .toggle-row{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 0;
+  }
+  #view-nova .toggle-row .t-title{font-size:13.5px;font-weight:700;}
+  #view-nova .toggle-row .t-desc{font-size:12.5px;color:var(--slate);margin-top:2px;}
+  #view-nova .switch{
+    position:relative;width:42px;height:24px;flex-shrink:0;
+  }
+  #view-nova .switch input{opacity:0;width:0;height:0;position:absolute;}
+  #view-nova .switch .track{
+    position:absolute;inset:0;border-radius:999px;background:var(--line);
+    transition:background .15s ease;cursor:pointer;
+  }
+  #view-nova .switch .track::before{
+    content:"";position:absolute;top:3px;left:3px;
+    width:18px;height:18px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    transition:transform .15s ease;
+  }
+  #view-nova .switch input:checked + .track{background:var(--ink);}
+  #view-nova .switch input:checked + .track::before{transform:translateX(18px);}
+
+  #view-nova .option-box{
+    display:flex;align-items:flex-start;gap:12px;
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:2px;
+  }
+  #view-nova .option-box.highlight{background:rgba(46,111,163,0.06);border-color:rgba(46,111,163,0.25);}
+  #view-nova .option-box.selectable{cursor:pointer;user-select:none;transition:box-shadow .15s ease;}
+  #view-nova .option-box.selectable:hover{box-shadow:0 0 0 1px rgba(46,111,163,0.3) inset;}
+  #view-nova .option-box .ob-icon{width:16px;height:16px;color:#2E6FA3;flex-shrink:0;margin-top:1px;}
+  #view-nova .option-box .radio{
+    width:16px;height:16px;border-radius:50%;border:2px solid var(--slate-soft);
+    flex-shrink:0;margin-top:2px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  #view-nova .option-box .radio svg{width:9px;height:9px;opacity:0;transition:opacity .1s ease;}
+  #view-nova .option-box.is-checked .radio{background:var(--ink);border-color:var(--ink);}
+  #view-nova .option-box.is-checked .radio svg{opacity:1;}
+  #view-nova .option-box .ob-title{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  #view-nova .option-box .ob-desc{font-size:12.5px;color:var(--slate);margin-top:3px;}
+
+  #view-nova .info-note{
+    display:none;align-items:flex-start;gap:10px;
+    margin-top:10px;
+    background:rgba(46,111,163,0.08);border:1px solid rgba(46,111,163,0.2);
+    border-radius:12px;padding:14px 16px;
+  }
+  #view-nova .info-note.show{display:flex;}
+  #view-nova .info-note svg{width:16px;height:16px;color:#2E6FA3;flex-shrink:0;margin-top:1px;}
+  #view-nova .info-note p{margin:0;font-size:12.5px;color:var(--charcoal);line-height:1.6;}
+  #view-nova .info-note p strong{color:#2E6FA3;}
+
+  #view-nova .sector-inner{
+    border:1px solid var(--line);border-radius:14px;padding:22px;
+  }
+  #view-nova .sector-inner h3{
+    font-size:14.5px;font-weight:700;margin:0 0 3px;display:flex;align-items:center;gap:9px;
+  }
+  #view-nova .sector-inner h3 svg{width:17px;height:17px;color:var(--charcoal);}
+  #view-nova .sector-inner > .si-desc{font-size:12.5px;color:var(--slate);margin:0 0 16px;}
+  #view-nova .sector-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  #view-nova .pill{
+    font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  #view-nova .pill.pill-slate{background:var(--paper);border:1px solid var(--line);color:var(--slate);}
+  #view-nova .pill.pill-amber{background:rgba(226,161,58,0.14);color:#9c6c1f;}
+  #view-nova .pill svg{width:12px;height:12px;}
+
+  #view-nova .sector-add-row{display:flex;gap:10px;margin-bottom:16px;}
+  #view-nova .sector-add-row input{
+    font-family:inherit;font-size:13.5px;color:var(--charcoal);
+    background:var(--paper);border:1px solid var(--line);border-radius:10px;
+    padding:11px 14px;outline:none;
+  }
+  #view-nova .sector-add-row input:focus{border-color:var(--teal);}
+  #view-nova .sector-add-row input.si-name{flex:1;}
+  #view-nova .sector-add-row input.si-qty{width:90px;}
+  #view-nova .btn-add{
+    display:inline-flex;align-items:center;gap:7px;flex-shrink:0;
+    background:#2E6FA3;color:#fff;border:none;
+    padding:0 18px;border-radius:10px;font-size:13px;font-weight:700;
+  }
+  #view-nova .btn-add svg{width:14px;height:14px;}
+
+  #view-nova .sector-empty{
+    border:1.5px dashed var(--line);border-radius:12px;
+    padding:34px 20px;text-align:center;
+  }
+  #view-nova .sector-empty svg{width:26px;height:26px;color:var(--slate-soft);margin-bottom:10px;}
+  #view-nova .sector-empty .se-title{font-size:13.5px;font-weight:700;color:var(--slate);}
+  #view-nova .sector-empty .se-desc{font-size:12px;color:var(--slate-soft);margin-top:3px;}
+
+  #view-nova .sector-list{display:flex;flex-direction:column;gap:8px;}
+  #view-nova .sector-row{
+    display:flex;align-items:center;gap:12px;
+    border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+    background:var(--paper);
+  }
+  #view-nova .sector-row .sr-name{font-size:13.5px;font-weight:600;flex-grow:1;}
+  #view-nova .sector-row .sr-qty{
+    font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;color:var(--teal-dark);
+    background:rgba(14,124,116,0.1);padding:4px 10px;border-radius:999px;
+  }
+  #view-nova .sector-row .sr-del{
+    width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+    background:var(--paper-2);color:var(--slate);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  #view-nova .sector-row .sr-del svg{width:13px;height:13px;}
+  #view-nova .sector-row .sr-del:hover{color:var(--danger);border-color:var(--danger);}
+
+  #view-nova .side-card{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 24px;margin-bottom:22px;
+  }
+  #view-nova .side-card h2{font-size:16px;font-weight:700;margin:0 0 14px;}
+  #view-nova .btn-save{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--ink);color:#fff;border:none;
+    padding:13px;border-radius:11px;font-size:13.5px;font-weight:700;margin-bottom:10px;
+  }
+  #view-nova .btn-save svg{width:15px;height:15px;color:var(--amber);}
+  #view-nova .btn-cancel{
+    width:100%;display:flex;align-items:center;justify-content:center;
+    background:var(--paper);color:var(--charcoal);border:1px solid var(--line);
+    padding:13px;border-radius:11px;font-size:13.5px;font-weight:600;
+  }
+  #view-nova .about-text{font-size:13px;color:var(--slate);line-height:1.6;margin:0 0 14px;}
+  #view-nova .about-text strong{color:var(--charcoal);}
+  #view-nova .about-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+  #view-nova .about-list li{
+    font-size:13px;font-weight:600;color:var(--charcoal);
+    display:flex;align-items:center;gap:9px;
+  }
+  #view-nova .about-list li::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;
+  }
+
+  @media (max-width:980px){
+    #view-nova .nv-wrap{grid-template-columns:1fr;}
+  }
+  @media (max-width:680px){
+    #view-nova .nv-header{padding:78px 18px 0;}
+    #view-nova .nv-wrap{padding:20px 18px 40px;}
+    #view-nova .field-row{grid-template-columns:1fr;}
+    #view-nova .sector-add-row{flex-wrap:wrap;}
+  }
+
+  /* toast (confirmação de salvar) */
+  /* shared: modal (Nova Empresa) */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;z-index:90;
+    background:rgba(11,21,36,0.55);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-card{
+    background:var(--paper-2);border-radius:18px;
+    padding:26px 26px 22px;width:100%;max-width:420px;
+    box-shadow:0 30px 60px -20px rgba(11,21,36,0.5);
+  }
+  .modal-card h3{font-size:17px;font-weight:700;margin:0 0 4px;}
+  .modal-card .m-sub{font-size:12.5px;color:var(--slate);margin:0 0 20px;}
+  .modal-card .field{margin-bottom:16px;}
+  .modal-card .field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;}
+  .modal-card .field input{
+    width:100%;font-family:inherit;font-size:13.5px;color:var(--charcoal);
+    background:var(--paper);border:1px solid var(--line);border-radius:11px;
+    padding:11px 14px;outline:none;
+  }
+  .modal-card .field input:focus{border-color:var(--teal);}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .modal-actions button{flex:1;padding:12px;border-radius:11px;font-size:13.5px;font-weight:700;border:none;}
+  .modal-actions .m-cancel{background:var(--paper);color:var(--charcoal);border:1px solid var(--line);}
+  .modal-actions .m-save{background:var(--ink);color:#fff;}
+
+  /* shared: dynamic assessment list rows (Riscos Psicossociais) */
+  #view-riscos .assessment-row{
+    display:flex;align-items:center;gap:14px;
+    padding:15px 4px;border-bottom:1px solid var(--line);
+  }
+  #view-riscos .assessment-row:last-child{border-bottom:none;}
+  #view-riscos .assessment-row .ar-icon{
+    width:38px;height:38px;border-radius:10px;flex-shrink:0;
+    background:rgba(14,124,116,0.1);color:var(--teal-dark);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #view-riscos .assessment-row .ar-icon svg{width:17px;height:17px;}
+  #view-riscos .assessment-row .ar-main{flex-grow:1;min-width:0;}
+  #view-riscos .assessment-row .ar-title{font-size:13.5px;font-weight:700;}
+  #view-riscos .assessment-row .ar-meta{font-size:12px;color:var(--slate);margin-top:2px;}
+  #view-riscos .assessment-row .status-pill{
+    font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;flex-shrink:0;
+  }
+  #view-riscos .assessment-row .status-pill.on{background:rgba(14,124,116,0.12);color:var(--teal-dark);}
+  #view-riscos .assessment-row .status-pill.off{background:rgba(94,107,120,0.12);color:var(--slate);}
+  #view-riscos .assessment-row .ar-del{
+    width:30px;height:30px;border-radius:8px;flex-shrink:0;
+    border:1px solid var(--line);background:var(--paper);color:var(--slate);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #view-riscos .assessment-row .ar-del svg{width:14px;height:14px;}
+  #view-riscos .assessment-row .ar-del:hover{color:var(--danger);border-color:var(--danger);}
+
+  /* dashboard: empty companies state */
+  #view-dashboard .companies-empty{
+    grid-column:1 / -1;
+    border:1.5px dashed var(--line);border-radius:16px;
+    padding:44px 20px;text-align:center;
+  }
+  #view-dashboard .companies-empty svg{width:26px;height:26px;color:var(--slate-soft);margin-bottom:10px;}
+  #view-dashboard .companies-empty .ce-title{font-size:13.5px;font-weight:700;color:var(--slate);}
+  #view-dashboard .companies-empty .ce-desc{font-size:12px;color:var(--slate-soft);margin-top:3px;}
+
+  .toast{
+    position:fixed;top:20px;right:20px;z-index:100;
+    background:var(--ink);color:#fff;
+    padding:13px 20px;border-radius:11px;font-size:13.5px;font-weight:600;
+    display:flex;align-items:center;gap:10px;
+    box-shadow:0 14px 30px -10px rgba(11,21,36,0.45);
+    opacity:0;transform:translateY(-8px);
+    transition:opacity .2s ease, transform .2s ease;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast svg{width:16px;height:16px;color:#4ADE80;}
+
+  /* ===================================================================
+     AUTH — login / cadastro
+  =================================================================== */
+  #auth-view{display:none;min-height:100vh;background:var(--paper);}
+  .auth-shell{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr;}
+  .auth-brand-panel{position:relative;overflow:hidden;background:linear-gradient(155deg,var(--ink),var(--ink-2) 55%,var(--ink-3));color:#fff;padding:56px;display:flex;flex-direction:column;justify-content:space-between;}
+  .auth-brand-panel::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:42px 42px;opacity:.65;}
+  .auth-brand-content,.auth-brand-foot{position:relative;z-index:1;max-width:520px;}
+  .auth-brand-content .eyebrow{color:var(--amber);}
+  .auth-brand-content h1{font-size:48px;line-height:1.02;margin:16px 0 14px;}
+  .auth-brand-content p{font-size:15px;line-height:1.65;color:rgba(255,255,255,.62);max-width:470px;}
+  .auth-feature-list{list-style:none;padding:0;margin:30px 0 0;display:grid;gap:12px;}
+  .auth-feature-list li{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,.8);}
+  .auth-feature-list li::before{content:"✓";width:22px;height:22px;border-radius:7px;background:rgba(14,124,116,.22);color:#7ee5dc;display:grid;place-items:center;font-weight:700;}
+  .auth-brand-foot{font-size:11px;color:rgba(255,255,255,.35);font-family:'IBM Plex Mono';letter-spacing:.04em;}
+  .auth-form-panel{display:flex;align-items:center;justify-content:center;padding:40px;}
+  .auth-card{width:100%;max-width:440px;background:var(--paper-2);border:1px solid var(--line);border-radius:20px;padding:34px;box-shadow:0 24px 60px -30px rgba(11,21,36,.3);}
+  .auth-card h2{font-size:25px;margin:0 0 7px;}
+  .auth-card .auth-sub{font-size:13px;color:var(--slate);margin:0 0 26px;line-height:1.5;}
+  .auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--paper);border:1px solid var(--line);padding:4px;border-radius:11px;margin-bottom:22px;}
+  .auth-tab{border:0;background:transparent;border-radius:8px;padding:9px;font-size:12.5px;font-weight:700;color:var(--slate);}
+  .auth-tab.active{background:var(--paper-2);color:var(--charcoal);box-shadow:0 2px 8px -5px rgba(11,21,36,.4);}
+  .auth-field{margin-bottom:15px;}
+  .auth-field label{display:block;font-size:12.5px;font-weight:700;margin-bottom:7px;}
+  .auth-field input{width:100%;font-family:inherit;font-size:13.5px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 13px;outline:none;}
+  .auth-field input:focus{border-color:var(--teal);}
+  .auth-submit{width:100%;border:0;background:var(--ink);color:#fff;padding:13px;border-radius:11px;font-size:13.5px;font-weight:700;margin-top:5px;}
+  .auth-submit:disabled{opacity:.6;cursor:not-allowed;}
+  .auth-error{display:none;background:rgba(196,86,47,.09);border:1px solid rgba(196,86,47,.25);color:#9f3f21;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:15px;line-height:1.4;}
+  .auth-error.show{display:block;}
+  .auth-note{font-size:11.5px;color:var(--slate-soft);margin:16px 0 0;line-height:1.5;text-align:center;}
+  .logout-btn{border:1px solid var(--line);background:var(--paper);color:var(--slate);border-radius:9px;padding:7px 10px;font-size:11px;font-weight:700;}
+  .logout-btn:hover{color:var(--danger);border-color:var(--danger);}
+  @media(max-width:820px){.auth-shell{grid-template-columns:1fr}.auth-brand-panel{display:none}.auth-form-panel{padding:22px}.auth-card{padding:26px 22px;}}
+
+</style>
+</head>
+<body>
+
+<div id="auth-view">
+  <div class="auth-shell">
+    <section class="auth-brand-panel">
+      <div class="auth-brand-content">
+        <span class="eyebrow">AM TST · ACESSO SEGURO</span>
+        <h1>Gestão SST<br>em um só lugar.</h1>
+        <p>Gerencie empresas, avaliações psicossociais e informações de SST com persistência real em banco de dados.</p>
+        <ul class="auth-feature-list">
+          <li>Dados persistidos em SQLite</li>
+          <li>Autenticação com senha protegida por hash</li>
+          <li>Sessões autenticadas por token</li>
+          <li>Dados separados por usuário</li>
+        </ul>
+      </div>
+      <div class="auth-brand-foot">AM TST — SAÚDE E SEGURANÇA DO TRABALHO</div>
+    </section>
+    <section class="auth-form-panel">
+      <div class="auth-card">
+        <h2 id="authTitle">Entrar</h2>
+        <p class="auth-sub" id="authSubtitle">Acesse o painel de Gestão SST.</p>
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="authLoginTab" onclick="setAuthMode('login')">Entrar</button>
+          <button type="button" class="auth-tab" id="authRegisterTab" onclick="setAuthMode('register')">Criar conta</button>
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <form id="authForm" onsubmit="return submitAuth(event)">
+          <div class="auth-field" id="authNameField" style="display:none">
+            <label for="authName">Nome</label>
+            <input id="authName" type="text" autocomplete="name" placeholder="Seu nome completo">
+          </div>
+          <div class="auth-field">
+            <label for="authEmail">E-mail</label>
+            <input id="authEmail" type="email" required autocomplete="email" placeholder="voce@empresa.com">
+          </div>
+          <div class="auth-field">
+            <label for="authPassword">Senha</label>
+            <input id="authPassword" type="password" required minlength="8" autocomplete="current-password" placeholder="Mínimo de 8 caracteres">
+          </div>
+          <button class="auth-submit" id="authSubmit" type="submit">Entrar</button>
+        </form>
+        <p class="auth-note">Seu acesso é validado pelo backend. Nunca armazenamos a senha em texto puro.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+
+<!-- =====================================================================
+     VIEW 1 — DASHBOARD
+===================================================================== -->
+<div id="view-dashboard" style="display:none">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#E2A13A" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="brand-text">
+        <span class="name">AM TST</span>
+        <span class="sub">Gestão em Segurança do Trabalho</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="partner-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Portal do Parceiro
+      </button>
+      <button class="icon-btn" aria-label="Notificações">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="icon-btn" aria-label="Ajuda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.9.4-1.4 1-1.4 1.9v.3"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <div class="user-chip">
+        <div class="info">
+          <div class="n">Alexandre Antônio Adão Machado</div>
+          <div class="e">alexandre1604981@gmail.com</div>
+        </div>
+        <div class="avatar" id="userAvatar">AL</div>
+        <button class="logout-btn" type="button" onclick="logout()">Sair</button>
+      </div>
+    </div>
+  </div>
+  <div class="hazard-rule"></div>
+
+  <div class="hero">
+    <div class="hero-inner">
+      <span class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z"/></svg>
+        Painel de Gestão SST
+      </span>
+      <h1>Gestão SST</h1>
+      <p class="lead">Monitore riscos, avaliações e conformidade de todas as empresas sob sua gestão em um único lugar.</p>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-ring" style="--pct:15%">
+            <div class="hole"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M12 11h.01M15 11h.01M9 8h.01M12 8h.01M15 8h.01"/></svg></div>
+          </div>
+          <div>
+            <div class="stat-num" id="statCompanies">0</div>
+            <div class="stat-label">Empresas cadastradas</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ring" style="--pct:0%">
+            <div class="hole"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-7"/></svg></div>
+          </div>
+          <div>
+            <div class="stat-num" id="statAssessments">0</div>
+            <div class="stat-label">Avaliações psicossociais</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ring" style="--pct:35%">
+            <div class="hole"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/></svg></div>
+          </div>
+          <div>
+            <div class="stat-num" id="statPGR">0</div>
+            <div class="stat-label">PGR emitidos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="ferramentas">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Módulos do sistema</span>
+        <h2>Suas Ferramentas</h2>
+        <div class="desc">Ferramentas integradas para gestão de saúde e segurança ocupacional</div>
+      </div>
+      <button class="btn-primary" onclick="openCompanyModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nova Empresa
+      </button>
+    </div>
+
+    <div class="tool-grid" id="toolGrid">
+
+      <a href="#" class="tool-card" style="--accent:#0E7C74;--accent-soft:rgba(14,124,116,0.1)" data-name="riscos psicossociais hse-it copsoq" onclick="showView('riscos');return false;">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 3a4.5 4.5 0 0 0-4.4 5.5A4 4 0 0 0 4 12a4 4 0 0 0 2 3.5V17a3 3 0 0 0 3 3h1"/><path d="M14.5 3a4.5 4.5 0 0 1 4.4 5.5A4 4 0 0 1 20 12a4 4 0 0 1-2 3.5V17a3 3 0 0 1-3 3h-1"/><path d="M9 12h6M10 20h4"/></svg></div>
+        <h3>Riscos Psicossociais</h3>
+        <p>HSE-IT e COPSOQ validados internacionalmente</p>
+        <div class="tag-row">
+          <span class="tag">HSE-IT</span><span class="tag">COPSOQ II</span><span class="tag">Plano de ação</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+
+      <div class="tool-card" style="--accent:#C4562F;--accent-soft:rgba(196,86,47,0.1)" data-name="avaliação burnout mbi">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2c2 3-3 4-2 7 .6 1.7 2 2 2 2s1.4-.3 2-2c1-3-4-4-2-7z"/><path d="M8.5 13a4.5 4.5 0 1 0 7 0"/></svg></div>
+        <h3>Avaliação Burnout</h3>
+        <p>Questionários científicos de esgotamento profissional</p>
+        <div class="tag-row">
+          <span class="tag">MBI validado</span><span class="tag">Relatório PDF</span><span class="tag">Dashboard</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#2E6FA3;--accent-soft:rgba(46,111,163,0.1)" data-name="pesquisas de clima nps">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/></svg></div>
+        <h3>Pesquisas de Clima</h3>
+        <p>Clima organizacional personalizado por empresa</p>
+        <div class="tag-row">
+          <span class="tag">NPS</span><span class="tag">Personalizável</span><span class="tag">Relatórios</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#0E7C74;--accent-soft:rgba(14,124,116,0.1)" data-name="pulse survey emojis likert">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2-7 4 14 2-7h4"/></svg></div>
+        <h3>Pulse Survey</h3>
+        <p>Avaliações curtas e periódicas com resumo automático</p>
+        <div class="tag-row">
+          <span class="tag">Semanal/Mensal</span><span class="tag">Emojis ou Likert</span><span class="tag">Email automático</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#E2A13A;--accent-soft:rgba(226,161,58,0.14)" data-name="treinamentos videos pdfs artigos">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg></div>
+        <h3>Treinamentos</h3>
+        <p>Crie módulos educativos para as empresas geridas</p>
+        <div class="tag-row">
+          <span class="tag">Vídeos</span><span class="tag">PDFs</span><span class="tag">Artigos</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#7B5EA7;--accent-soft:rgba(123,94,167,0.12)" data-name="ouvidoria smart canal anônimo">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-2 1 1-3.2a8.4 8.4 0 1 1 18-4.3z"/><path d="M8.5 12.5s.8 1.3 2 1.3 2-1.3 2-1.3M9.5 10h.01M14.5 10h.01"/></svg></div>
+        <h3>Ouvidoria Smart</h3>
+        <p>Canal anônimo para relatos e denúncias</p>
+        <div class="tag-row">
+          <span class="tag">100% Anônimo</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#0B1524;--accent-soft:rgba(11,21,36,0.08)" data-name="pgr programa gerenciamento riscos nr-1 nr-17">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4.5"/></svg></div>
+        <h3>PGR</h3>
+        <p>Programa de Gerenciamento de Riscos (NR-1 / NR-17)</p>
+        <div class="tag-row">
+          <span class="tag">Inventário</span><span class="tag">Plano de ação</span><span class="tag">e-Social</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+      <div class="tool-card" style="--accent:#2E6FA3;--accent-soft:rgba(46,111,163,0.1)" data-name="aep avaliação ergonômica preliminar nr-17">
+        <div class="tool-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4a3 3 0 1 1 6 0v2H9V4z"/><path d="M6 8h12l-1.5 12h-9L6 8z"/><path d="M10 12v4M14 12v4"/></svg></div>
+        <h3>AEP</h3>
+        <p>Avaliação Ergonômica Preliminar (NR-17)</p>
+        <div class="tag-row">
+          <span class="tag">Avaliações</span><span class="tag">Importação</span><span class="tag">PGR</span>
+        </div>
+        <span class="go">Acessar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section" id="empresas">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Carteira de clientes</span>
+        <h2>Empresas</h2>
+        <div class="desc">Clique para acessar o PGR de cada empresa</div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-top">
+        <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+        <div>
+          <div class="n" id="planCount">0 / 20 empresas</div>
+          <div class="d">Empresas cadastradas no seu plano</div>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="planProgress" style="width:0%"></div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="companySearch" placeholder="Buscar empresa...">
+      </div>
+      <div class="sort-box">
+        Ordem alfabética
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    <div class="company-grid" id="companyGrid"></div>
+  </div>
+
+  <div class="section" id="equipe" style="padding-bottom:52px;">
+    <div class="team-card">
+      <div class="team-head">
+        <div>
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Equipe da conta
+          </h2>
+          <p>Convide colaboradores para acessar esta conta com você. Todos terão acesso ao mesmo dashboard e ferramentas.</p>
+        </div>
+        <button class="invite-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Convidar
+        </button>
+      </div>
+      <div class="team-sub">Colaboradores ativos (1)</div>
+      <div class="member-row">
+        <div class="avatar">AL</div>
+        <div class="info">
+          <div class="n">Alexandre Antônio Adão Machado
+            <span class="owner-chip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.5L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.6-.5z"/></svg>Principal</span>
+          </div>
+          <div class="e">alexandre1604981@gmail.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-mark" style="background:rgba(255,255,255,0.08);">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#E2A13A" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <span style="font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff;">AM TST</span>
+          <p>Sistema completo de gestão SST: riscos psicossociais, PGR, AEP, canal de denúncias, pesquisas de clima e treinamentos, tudo integrado.</p>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>contato@amtst.com.br</a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1.1.4 2.1.7 3.1a2 2 0 0 1-.5 2.1L8 10.2a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 2 .6 3.1.7a2 2 0 0 1 1.7 2z"/></svg>+55 27 99999-0000</a>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 AM TST. Todos os direitos reservados.</div>
+  </footer>
+
+</div>
+
+<!-- =====================================================================
+     VIEW 2 — RISCOS PSICOSSOCIAIS
+===================================================================== -->
+<div id="view-riscos">
+
+  <a href="#" class="back-pill" onclick="showView('dashboard');return false;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 22V12h6v10M3 10l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    Voltar ao dashboard
+  </a>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#E2A13A" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="brand-text">
+        <span class="name">AM TST</span>
+        <span class="sub">Gestão em Segurança do Trabalho</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="info">
+          <div class="n">Alexandre Antônio Adão Machado</div>
+          <div class="e">alexandre1604981@gmail.com</div>
+        </div>
+        <div class="avatar">AL</div>
+      </div>
+    </div>
+  </div>
+  <div class="hazard-rule"></div>
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="crumb">
+        <a href="#" onclick="showView('dashboard');return false;" style="display:flex;align-items:center;gap:6px;">Dashboard</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <span>Riscos Psicossociais</span>
+      </div>
+      <span class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 3a4.5 4.5 0 0 0-4.4 5.5A4 4 0 0 0 4 12a4 4 0 0 0 2 3.5V17a3 3 0 0 0 3 3h1"/><path d="M14.5 3a4.5 4.5 0 0 1 4.4 5.5A4 4 0 0 1 20 12a4 4 0 0 1-2 3.5V17a3 3 0 0 1-3 3h-1"/></svg>
+        Riscos Psicossociais
+      </span>
+      <div class="hero-top">
+        <div>
+          <h1>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 3a4.5 4.5 0 0 0-4.4 5.5A4 4 0 0 0 4 12a4 4 0 0 0 2 3.5V17a3 3 0 0 0 3 3h1"/><path d="M14.5 3a4.5 4.5 0 0 1 4.4 5.5A4 4 0 0 1 20 12a4 4 0 0 1-2 3.5V17a3 3 0 0 1-3 3h-1"/><path d="M9 12h6M10 20h4"/></svg>
+            Gestão de Riscos Psicossociais
+          </h1>
+          <p class="lead">Aplique avaliações validadas internacionalmente para identificar riscos psicossociais e alimentar automaticamente o PGR (NR-1).</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-outline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/></svg>
+            Imprimir questionário
+          </button>
+          <button class="btn-amber" id="newAssessmentBtn" onclick="openNewAssessment(getActiveMethod())">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Nova Avaliação
+          </button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-method="hse">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          HSE-IT
+        </button>
+        <button class="tab-btn" data-method="copsoq">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+          COPSOQ II
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-wrap">
+
+    <div class="method-panel active" id="panel-hse">
+
+      <div class="method-strip">
+        <div>
+          <div class="m-title">Avaliações HSE-IT</div>
+          <div class="m-desc">Health and Safety Executive Indicator Tool — instrumento oficial do órgão britânico de saúde e segurança, focado em 7 dimensões de estresse ocupacional.</div>
+        </div>
+        <span class="method-tag">35 itens · 7 dimensões</span>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-icon" style="--accent:#0E7C74;--accent-soft:rgba(14,124,116,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><div class="stat-num" id="hseTotal">0</div><div class="stat-label">Total Avaliações</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#2E6FA3;--accent-soft:rgba(46,111,163,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20V10M10 20V4M17 20v-7"/></svg></div><div><div class="stat-num" id="hseActive">0</div><div class="stat-label">Ativas</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#E2A13A;--accent-soft:rgba(226,161,58,0.14)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></div><div><div class="stat-num" id="hseCompanies">0</div><div class="stat-label">Empresas</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#7B5EA7;--accent-soft:rgba(123,94,167,0.12)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-num" id="hseResponses">0</div><div class="stat-label">Respostas</div></div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="Buscar por título ou empresa...">
+        </div>
+        <div class="filter-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Todo período
+        </div>
+        <div class="filter-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+          Todas empresas
+        </div>
+      </div>
+
+      <div class="list-card">
+        <div class="list-head"><h2>Avaliações HSE-IT</h2></div>
+        <div id="assessmentList-hse"></div>
+      </div>
+    </div>
+
+    <div class="method-panel" id="panel-copsoq">
+
+      <div class="method-strip">
+        <div>
+          <div class="m-title">Avaliações COPSOQ II</div>
+          <div class="m-desc">Copenhagen Psychosocial Questionnaire — versão curta, cobrindo demandas, organização do trabalho, relações sociais, valores e saúde/bem-estar.</div>
+        </div>
+        <span class="method-tag">40 itens · versão curta</span>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-icon" style="--accent:#0E7C74;--accent-soft:rgba(14,124,116,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><div class="stat-num" id="copsoqTotal">0</div><div class="stat-label">Total Avaliações</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#2E6FA3;--accent-soft:rgba(46,111,163,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20V10M10 20V4M17 20v-7"/></svg></div><div><div class="stat-num" id="copsoqActive">0</div><div class="stat-label">Ativas</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#E2A13A;--accent-soft:rgba(226,161,58,0.14)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></div><div><div class="stat-num" id="copsoqCompanies">0</div><div class="stat-label">Empresas</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="--accent:#7B5EA7;--accent-soft:rgba(123,94,167,0.12)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-num" id="copsoqResponses">0</div><div class="stat-label">Respostas</div></div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="Buscar por título ou empresa...">
+        </div>
+        <div class="filter-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Todo período
+        </div>
+        <div class="filter-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+          Todas empresas
+        </div>
+      </div>
+
+      <div class="list-card">
+        <div class="list-head"><h2>Avaliações COPSOQ II</h2></div>
+        <div id="assessmentList-copsoq"></div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="num">01</div>
+        <h4>Escolha o método</h4>
+        <p>Selecione HSE-IT ou COPSOQ II conforme o perfil da empresa avaliada.</p>
+      </div>
+      <div class="flow-step">
+        <div class="num">02</div>
+        <h4>Selecione a empresa</h4>
+        <p>Vincule a avaliação a uma empresa cadastrada no seu plano.</p>
+      </div>
+      <div class="flow-step">
+        <div class="num">03</div>
+        <h4>Envie aos colaboradores</h4>
+        <p>Compartilhe o link ou QR code para respostas anônimas.</p>
+      </div>
+      <div class="flow-step">
+        <div class="num">04</div>
+        <h4>Alimente o PGR</h4>
+        <p>Os resultados geram automaticamente o inventário de riscos e plano de ação no PGR.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =====================================================================
+     VIEW 3 — NOVA AVALIAÇÃO (HSE-IT / COPSOQ II)
+===================================================================== -->
+<div id="view-nova">
+
+  <a href="#" class="back-pill" onclick="showView('dashboard');return false;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 22V12h6v10M3 10l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    Voltar ao dashboard
+  </a>
+
+  <div class="nv-header">
+    <a href="#" class="nv-back" onclick="showView('riscos');return false;" title="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div>
+      <h1>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        <span id="nvTitle">Nova Avaliação HSE-IT</span>
+      </h1>
+      <p>Configure os detalhes da avaliação de riscos psicossociais</p>
+    </div>
+  </div>
+
+  <form class="nv-wrap" id="nvForm" onsubmit="return saveAssessment(event)">
+
+    <div>
+      <!-- Informações Gerais -->
+      <div class="form-card">
+        <h2>Informações Gerais</h2>
+        <p class="fc-desc">Defina os dados básicos da avaliação</p>
+
+        <div class="field">
+          <label>Empresa <span class="req">*</span></label>
+          <div class="company-picker">
+            <select class="company-select" id="nvCompanySelect" onchange="onCompanyChange()"></select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Título da Avaliação <span class="req">*</span></label>
+          <input type="text" id="nvAssessmentTitle" placeholder="Ex: Avaliação HSE-IT 2024">
+        </div>
+
+        <div class="field">
+          <label>Descrição</label>
+          <textarea placeholder="Descreva o objetivo desta avaliação..."></textarea>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label>Data de Início</label>
+            <input type="date">
+          </div>
+          <div>
+            <label>Data de Término</label>
+            <input type="date">
+          </div>
+        </div>
+
+        <div class="toggle-row" style="border-top:1px solid var(--line);">
+          <div>
+            <div class="t-title">Avaliação Ativa</div>
+            <div class="t-desc">Permite que funcionários respondam a avaliação</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="track"></span>
+          </label>
+        </div>
+
+        <div class="option-box" style="align-items:center;">
+          <svg class="ob-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 6.5L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.6-.5z"/></svg>
+          <div style="flex-grow:1;">
+            <div class="ob-title">Avaliação Positiva</div>
+            <div class="ob-desc">Redação padrão do <span id="nvMethodInline">HSE-IT</span> (tradução fiel do instrumento original).</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox">
+            <span class="track"></span>
+          </label>
+        </div>
+
+        <div class="option-box highlight selectable" id="multisetorialBox" onclick="toggleMultisetorial()">
+          <span class="radio" id="multisetorialRadio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </span>
+          <div>
+            <div class="ob-title" style="color:#2E6FA3;">
+              <svg class="ob-icon" style="margin:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Avaliação multisetorial
+            </div>
+            <div class="ob-desc">Permitir que colaboradores que atuam em mais de um setor marquem todos os setores em que trabalham.</div>
+          </div>
+        </div>
+        <div class="info-note" id="multisetorialInfo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/></svg>
+          <p>Nesta modalidade, a resposta do colaborador será contabilizada em <strong>cada setor</strong> selecionado — tanto na pontuação quanto no total de colaboradores do setor, para que o percentual de participação fique correto em cada um.</p>
+        </div>
+      </div>
+
+      <!-- Setores / Departamentos -->
+      <div class="form-card">
+        <h2>Setores / Departamentos</h2>
+        <p class="fc-desc">Configure os setores da empresa para segmentação das respostas</p>
+
+        <div class="sector-inner">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+            Estrutura da Empresa
+          </h3>
+          <p class="si-desc">Configure os setores/departamentos da empresa e a quantidade de colaboradores em cada um</p>
+
+          <div class="sector-pills">
+            <span class="pill pill-slate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Empresa: <span id="nvTotalColab">12</span> colaboradores
+            </span>
+            <span class="pill pill-amber">Restantes: <span id="nvRemaining">12</span></span>
+          </div>
+
+          <div class="sector-add-row">
+            <input type="text" class="si-name" id="nvSectorName" placeholder="Nome do setor (ex: Comercial, TI, RH...)">
+            <input type="number" class="si-qty" id="nvSectorQty" placeholder="Qtd." min="1">
+            <button type="button" class="btn-add" onclick="addSector()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+              Adicionar
+            </button>
+          </div>
+
+          <div class="sector-empty" id="nvSectorEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+            <div class="se-title">Nenhum setor configurado</div>
+            <div class="se-desc">Adicione os setores da empresa acima</div>
+          </div>
+
+          <div class="sector-list" id="nvSectorList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <div class="side-card">
+        <h2>Ações</h2>
+        <button type="submit" class="btn-save">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Salvar Avaliação
+        </button>
+        <button type="button" class="btn-cancel" onclick="showView('riscos')">Cancelar</button>
+      </div>
+
+      <div class="side-card">
+        <h2 id="nvAboutTitle">Sobre o HSE-IT</h2>
+        <p class="about-text" id="nvAboutText">
+          O <strong>HSE-IT</strong> (Health and Safety Executive – Indicator Tool) é uma ferramenta validada para avaliar riscos psicossociais no ambiente de trabalho.
+          O questionário contém 35 questões que avaliam 7 dimensões:
+        </p>
+        <ul class="about-list" id="nvAboutList">
+          <li>Demandas</li>
+          <li>Controle</li>
+          <li>Apoio da Chefia</li>
+          <li>Apoio dos Colegas</li>
+          <li>Relacionamentos</li>
+          <li>Papel/Cargo</li>
+          <li>Mudanças</li>
+        </ul>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<!-- Modal: Nova Empresa -->
+<div class="modal-overlay" id="companyModalOverlay">
+  <div class="modal-card">
+    <h3>Nova Empresa</h3>
+    <p class="m-sub">Cadastre uma empresa para vincular avaliações e PGR.</p>
+    <div class="field">
+      <label>Nome da empresa</label>
+      <input type="text" id="modalCompanyName" placeholder="Ex: Metalúrgica Convex LTDA">
+    </div>
+    <div class="field">
+      <label>CNPJ</label>
+      <input type="text" id="modalCompanyCnpj" placeholder="00.000.000/0000-00">
+    </div>
+    <div class="field">
+      <label>Colaboradores</label>
+      <input type="number" id="modalCompanyColab" placeholder="Ex: 12" min="1">
+    </div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeCompanyModal()">Cancelar</button>
+      <button class="m-save" onclick="submitNewCompany()">Salvar Empresa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastMsg">Avaliação salva com sucesso</span>
+</div>
+
+<script>
+  // =====================================================================
+  // NAVEGAÇÃO ENTRE TELAS (sem reload)
+  // Cada "view" é uma <div> própria. Trocamos explicitamente para 'block' / 'none' —
+  // nunca para '' (string vazia), pois isso apenas remove o estilo inline e deixa
+  // o elemento voltar a herdar a regra do CSS (ex: #view-riscos{display:none}),
+  // fazendo a tela "sumir" mesmo depois de "ativada".
+  // =====================================================================
+  const views = {
+    dashboard: document.getElementById('view-dashboard'),
+    riscos:    document.getElementById('view-riscos'),
+    nova:      document.getElementById('view-nova')
+  };
+
+  function showView(name){
+    if (!views[name]) return; // nome inválido: não faz nada
+    Object.keys(views).forEach(key => {
+      views[key].style.display = (key === name) ? 'block' : 'none';
+    });
+    window.scrollTo(0, 0);
+  }
+
+  // ---- abas HSE-IT / COPSOQ II (riscos psicossociais) ----
+  const tabs = document.querySelectorAll('#view-riscos .tab-btn');
+  const panels = { hse: document.getElementById('panel-hse'), copsoq: document.getElementById('panel-copsoq') };
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      Object.values(panels).forEach(p => p.classList.remove('active'));
+      panels[tab.dataset.method].classList.add('active');
+    });
+  });
+
+  // devolve o método (hse | copsoq) da aba ativa em "Riscos Psicossociais"
+  function getActiveMethod(){
+    const active = document.querySelector('#view-riscos .tab-btn.active');
+    return active ? active.dataset.method : 'hse';
+  }
+
+  // =====================================================================
+  // CAMADA DE DADOS — API REST + SQLite no backend
+  // =====================================================================
+  const API_BASE = '';
+  let authToken = localStorage.getItem('am_tst_token') || '';
+  let currentUser = null;
+
+  async function api(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
+    const res = await fetch(API_BASE + path, { ...options, headers });
+    let body = null;
+    try { body = await res.json(); } catch (_) {}
+    if (res.status === 401) {
+      authToken = '';
+      localStorage.removeItem('am_tst_token');
+      currentUser = null;
+      showAuth();
+    }
+    if (!res.ok) throw new Error(body?.error || `Erro HTTP ${res.status}`);
+    return body;
+  }
+
+  function uid(prefix){
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  let state = { companies: [], assessments: [] };
+
+  async function loadState(){
+    const data = await api('/api/state');
+    state.companies = data.companies || [];
+    state.assessments = data.assessments || [];
+  }
+
+  async function persistCompanies(){ return state.companies; }
+  async function persistAssessments(){ return state.assessments; }
+
+  function formatDate(ts){
+    return new Date(ts).toLocaleDateString('pt-BR');
+  }
+  function setText(id, value){
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+  function initials(name){
+    return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  }
+
+  // =====================================================================
+  // EMPRESAS — grid do dashboard + seletor da tela "Nova Avaliação"
+  // =====================================================================
+  function renderCompanies(){
+    const grid = document.getElementById('companyGrid');
+    if (!grid) return;
+
+    if (!state.companies.length) {
+      grid.innerHTML = `
+        <div class="companies-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+          <div class="ce-title">Nenhuma empresa cadastrada</div>
+          <div class="ce-desc">Clique em "Nova Empresa" para começar</div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = state.companies.map(c => `
+      <div class="company-card" data-name="${c.name.toLowerCase()}">
+        <div class="company-banner"><div class="mark">${initials(c.name)}</div></div>
+        <div class="company-body">
+          <div>
+            <div class="cname">${c.name}</div>
+            <div class="cnpj">${c.cnpj || 'CNPJ não informado'}</div>
+          </div>
+          <span class="risk-pill"><span class="dot"></span>${c.colaboradores || 0} colaboradores</span>
+          <div class="company-actions">
+            <button title="Chaves de acesso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="M10.5 12.5L20 3M17 6l2 2M14 9l2 2"/></svg></button>
+            <button title="Documentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></button>
+            <button title="Relatório"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></button>
+            <button title="Excluir" class="danger" onclick="deleteCompany('${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg></button>
+          </div>
+          <a href="#" class="access-btn" onclick="return false;">Acessar PGR</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function deleteCompany(id){
+    if (!confirm('Excluir esta empresa e as avaliações vinculadas?')) return;
+    try {
+      await api(`/api/companies/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await loadState();
+      renderCompanies();
+      renderCompanyPicker();
+      updateStats();
+      showToast('Empresa removida', true);
+    } catch (err) { showToast(err.message, false); }
+  }
+
+  function renderCompanyPicker(selectedId){
+    const sel = document.getElementById('nvCompanySelect');
+    if (!sel) return;
+    if (!state.companies.length) {
+      sel.innerHTML = '<option value="">Nenhuma empresa cadastrada</option>';
+      return;
+    }
+    sel.innerHTML = state.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (selectedId) sel.value = selectedId;
+  }
+
+  function getSelectedCompany(){
+    const sel = document.getElementById('nvCompanySelect');
+    if (!sel || !sel.value) return null;
+    return state.companies.find(c => c.id === sel.value) || null;
+  }
+
+  function onCompanyChange(){
+    const company = getSelectedCompany();
+    resetSectorBuilder(company ? company.colaboradores : 0);
+  }
+
+  // ---- filtro de empresas (dashboard) ----
+  const companySearch = document.getElementById('companySearch');
+  if (companySearch) {
+    companySearch.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      document.querySelectorAll('#companyGrid .company-card').forEach(card => {
+        card.style.display = card.dataset.name.includes(q) ? '' : 'none';
+      });
+    });
+  }
+
+  // ---- modal "Nova Empresa" ----
+  function openCompanyModal(){
+    document.getElementById('modalCompanyName').value = '';
+    document.getElementById('modalCompanyCnpj').value = '';
+    document.getElementById('modalCompanyColab').value = '';
+    document.getElementById('companyModalOverlay').classList.add('show');
+    document.getElementById('modalCompanyName').focus();
+  }
+  function closeCompanyModal(){
+    document.getElementById('companyModalOverlay').classList.remove('show');
+  }
+  const companyModalOverlay = document.getElementById('companyModalOverlay');
+  if (companyModalOverlay) {
+    companyModalOverlay.addEventListener('click', (e) => {
+      if (e.target === companyModalOverlay) closeCompanyModal();
+    });
+  }
+  async function submitNewCompany(){
+    const name = document.getElementById('modalCompanyName').value.trim();
+    const cnpj = document.getElementById('modalCompanyCnpj').value.trim();
+    const colab = parseInt(document.getElementById('modalCompanyColab').value, 10) || 0;
+    if (!name) {
+      showToast('Informe o nome da empresa', false);
+      document.getElementById('modalCompanyName').focus();
+      return;
+    }
+    try {
+      await api('/api/companies', { method:'POST', body: JSON.stringify({ name, cnpj: cnpj || null, colaboradores: colab }) });
+      await loadState();
+      renderCompanies(); renderCompanyPicker(); updateStats(); closeCompanyModal();
+      showToast('Empresa cadastrada com sucesso', true);
+    } catch (err) { showToast(err.message, false); }
+  }
+
+  // =====================================================================
+  // TELA "NOVA AVALIAÇÃO" — conteúdo muda conforme o método (HSE-IT / COPSOQ II)
+  // =====================================================================
+  const methodContent = {
+    hse: {
+      formTitle: 'Nova Avaliação HSE-IT',
+      inline: 'HSE-IT',
+      aboutTitle: 'Sobre o HSE-IT',
+      aboutText: 'O <strong>HSE-IT</strong> (Health and Safety Executive – Indicator Tool) é uma ferramenta validada para avaliar riscos psicossociais no ambiente de trabalho. O questionário contém 35 questões que avaliam 7 dimensões:',
+      dimensions: ['Demandas','Controle','Apoio da Chefia','Apoio dos Colegas','Relacionamentos','Papel/Cargo','Mudanças'],
+      placeholder: 'Ex: Avaliação HSE-IT 2024'
+    },
+    copsoq: {
+      formTitle: 'Nova Avaliação COPSOQ II',
+      inline: 'COPSOQ II',
+      aboutTitle: 'Sobre o COPSOQ II',
+      aboutText: 'O <strong>COPSOQ II</strong> (Copenhagen Psychosocial Questionnaire) — versão curta — é um instrumento validado internacionalmente para mapear riscos psicossociais. O questionário contém 40 questões organizadas em 5 grupos:',
+      dimensions: ['Demandas no trabalho','Organização do trabalho','Relações sociais e liderança','Valores no local de trabalho','Saúde e bem-estar'],
+      placeholder: 'Ex: Avaliação COPSOQ II 2024'
+    }
+  };
+
+  function openNewAssessment(method){
+    const data = methodContent[method] || methodContent.hse;
+
+    document.getElementById('nvTitle').textContent = data.formTitle;
+    document.getElementById('nvMethodInline').textContent = data.inline;
+    document.getElementById('nvAboutTitle').textContent = data.aboutTitle;
+    document.getElementById('nvAboutText').innerHTML = data.aboutText;
+    document.getElementById('nvAssessmentTitle').placeholder = data.placeholder;
+
+    document.getElementById('nvAboutList').innerHTML = data.dimensions.map(d => `<li>${d}</li>`).join('');
+
+    const form = document.getElementById('nvForm');
+    form.dataset.method = method;
+    form.reset(); // limpa título, descrição, datas e restaura os toggles ao padrão do HTML
+
+    renderCompanyPicker();
+    const company = getSelectedCompany();
+    resetSectorBuilder(company ? company.colaboradores : 0);
+
+    // reseta a opção "Avaliação multisetorial" toda vez que o formulário é aberto
+    const multiBox = document.getElementById('multisetorialBox');
+    const multiInfo = document.getElementById('multisetorialInfo');
+    if (multiBox) multiBox.classList.remove('is-checked');
+    if (multiInfo) multiInfo.classList.remove('show');
+
+    showView('nova');
+  }
+
+  // ---- "Avaliação multisetorial": seleciona/desmarca e mostra a explicação ----
+  function toggleMultisetorial(){
+    const box = document.getElementById('multisetorialBox');
+    const info = document.getElementById('multisetorialInfo');
+    const checked = box.classList.toggle('is-checked');
+    info.classList.toggle('show', checked);
+  }
+
+  // ---- Setores / Departamentos: adicionar e remover ----
+  let remainingColab = 0;
+  const totalColabEl   = document.getElementById('nvTotalColab');
+  const remainingEl    = document.getElementById('nvRemaining');
+  const sectorEmptyEl  = document.getElementById('nvSectorEmpty');
+  const sectorListEl   = document.getElementById('nvSectorList');
+  const sectorNameEl   = document.getElementById('nvSectorName');
+  const sectorQtyEl    = document.getElementById('nvSectorQty');
+
+  function refreshSectorEmptyState(){
+    const hasSectors = sectorListEl.children.length > 0;
+    sectorEmptyEl.style.display = hasSectors ? 'none' : 'block';
+  }
+
+  function resetSectorBuilder(totalColab){
+    remainingColab = totalColab || 0;
+    totalColabEl.textContent = remainingColab;
+    remainingEl.textContent = remainingColab;
+    sectorListEl.innerHTML = '';
+    sectorNameEl.value = '';
+    sectorQtyEl.value = '';
+    refreshSectorEmptyState();
+  }
+
+  function addSector(){
+    const name = sectorNameEl.value.trim();
+    const qty = parseInt(sectorQtyEl.value, 10);
+
+    if (!name) { sectorNameEl.focus(); return; }
+    if (!qty || qty < 1) { sectorQtyEl.focus(); return; }
+    if (qty > remainingColab) {
+      showToast(`Restam apenas ${remainingColab} colaborador(es) para alocar`, false);
+      return;
+    }
+
+    remainingColab -= qty;
+    remainingEl.textContent = remainingColab;
+
+    const row = document.createElement('div');
+    row.className = 'sector-row';
+    row.innerHTML = `
+      <span class="sr-name">${name}</span>
+      <span class="sr-qty">${qty} colab.</span>
+      <button type="button" class="sr-del" title="Remover">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>
+      </button>
+    `;
+    row.querySelector('.sr-del').addEventListener('click', () => {
+      remainingColab += qty;
+      remainingEl.textContent = remainingColab;
+      row.remove();
+      refreshSectorEmptyState();
+    });
+
+    sectorListEl.appendChild(row);
+    sectorNameEl.value = '';
+    sectorQtyEl.value = '';
+    sectorNameEl.focus();
+    refreshSectorEmptyState();
+  }
+
+  function getSectorsFromDOM(){
+    return Array.from(sectorListEl.children).map(row => ({
+      name: row.querySelector('.sr-name').textContent,
+      qty: parseInt(row.querySelector('.sr-qty').textContent, 10) || 0
+    }));
+  }
+
+  // Enter no campo "nome do setor" também adiciona
+  sectorNameEl && sectorNameEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addSector(); }
+  });
+  sectorQtyEl && sectorQtyEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addSector(); }
+  });
+
+  // =====================================================================
+  // AVALIAÇÕES — salvar no banco, listar e excluir
+  // =====================================================================
+  function renderAssessments(method){
+    const container = document.getElementById('assessmentList-' + method);
+    if (!container) return;
+
+    const labels = { hse: 'HSE-IT', copsoq: 'COPSOQ II' };
+    const list = state.assessments
+      .filter(a => a.method === method)
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 3a4.5 4.5 0 0 0-4.4 5.5A4 4 0 0 0 4 12a4 4 0 0 0 2 3.5V17a3 3 0 0 0 3 3h1"/><path d="M14.5 3a4.5 4.5 0 0 1 4.4 5.5A4 4 0 0 1 20 12a4 4 0 0 1-2 3.5V17a3 3 0 0 1-3 3h-1"/></svg></div>
+          <h3>Nenhuma avaliação encontrada</h3>
+          <p>Crie uma nova avaliação ${labels[method]} para começar a identificar riscos psicossociais.</p>
+          <button class="btn-primary" onclick="openNewAssessment('${method}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Nova Avaliação</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(a => `
+      <div class="assessment-row">
+        <div class="ar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        <div class="ar-main">
+          <div class="ar-title">${a.title}</div>
+          <div class="ar-meta">${a.companyName} · ${a.sectors.length} setor(es) · criada em ${formatDate(a.createdAt)}${a.multisetorial ? ' · multisetorial' : ''}</div>
+        </div>
+        <span class="status-pill ${a.active ? 'on' : 'off'}">${a.active ? 'Ativa' : 'Inativa'}</span>
+        <button class="ar-del" title="Excluir avaliação" onclick="deleteAssessment('${a.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  async function deleteAssessment(id){
+    if (!confirm('Excluir esta avaliação?')) return;
+    try {
+      await api(`/api/assessments/${encodeURIComponent(id)}`, { method:'DELETE' });
+      await loadState();
+      renderAssessments('hse'); renderAssessments('copsoq'); updateStats();
+      showToast('Avaliação excluída', true);
+    } catch (err) { showToast(err.message, false); }
+  }
+
+  // ---- salvar avaliação ----
+  async function saveAssessment(e){
+    e.preventDefault();
+    const form = document.getElementById('nvForm');
+    const method = form.dataset.method || 'hse';
+
+    const title = document.getElementById('nvAssessmentTitle').value.trim();
+    if (!title) {
+      showToast('Informe o título da avaliação', false);
+      document.getElementById('nvAssessmentTitle').focus();
+      return false;
+    }
+
+    const company = getSelectedCompany();
+    if (!company) {
+      showToast('Cadastre e selecione uma empresa antes de salvar', false);
+      return false;
+    }
+
+    const description = form.querySelector('textarea').value.trim();
+    const dateInputs = form.querySelectorAll('input[type="date"]');
+    const startDate = dateInputs[0] ? dateInputs[0].value : '';
+    const endDate = dateInputs[1] ? dateInputs[1].value : '';
+    const toggles = form.querySelectorAll('.switch input[type="checkbox"]');
+    const active = toggles[0] ? toggles[0].checked : true;
+    const positiveWording = toggles[1] ? toggles[1].checked : false;
+    const multisetorial = document.getElementById('multisetorialBox').classList.contains('is-checked');
+    const sectors = getSectorsFromDOM();
+
+    const record = {
+      id: uid('av'),
+      method,
+      companyId: company.id,
+      companyName: company.name,
+      title,
+      description,
+      startDate,
+      endDate,
+      active,
+      positiveWording,
+      multisetorial,
+      sectors,
+      createdAt: Date.now()
+    };
+
+    try {
+      await api('/api/assessments', { method:'POST', body: JSON.stringify(record) });
+      await loadState();
+    } catch (err) {
+      showToast(err.message, false);
+      return false;
+    }
+
+    renderAssessments(method);
+    updateStats();
+
+    // garante que a aba correspondente fique ativa ao voltar para "Riscos Psicossociais"
+    document.querySelectorAll('#view-riscos .tab-btn').forEach(t => t.classList.toggle('active', t.dataset.method === method));
+    document.querySelectorAll('#view-riscos .method-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + method).classList.add('active');
+
+    showToast('Avaliação salva com sucesso', true);
+    setTimeout(() => showView('riscos'), 900);
+    return false;
+  }
+
+  // =====================================================================
+  // ESTATÍSTICAS — recalculadas a partir do banco após qualquer mudança
+  // =====================================================================
+  function updateStats(){
+    const totalCompanies = state.companies.length;
+    const hseList = state.assessments.filter(a => a.method === 'hse');
+    const copsoqList = state.assessments.filter(a => a.method === 'copsoq');
+
+    setText('statCompanies', totalCompanies);
+    setText('statAssessments', state.assessments.length);
+    setText('statPGR', totalCompanies);
+
+    setText('planCount', `${totalCompanies} / 20 empresas`);
+    const fill = document.getElementById('planProgress');
+    if (fill) fill.style.width = Math.min(100, (totalCompanies / 20) * 100) + '%';
+
+    setText('hseTotal', hseList.length);
+    setText('hseActive', hseList.filter(a => a.active).length);
+    setText('hseCompanies', new Set(hseList.map(a => a.companyId)).size);
+    setText('hseResponses', 0);
+
+    setText('copsoqTotal', copsoqList.length);
+    setText('copsoqActive', copsoqList.filter(a => a.active).length);
+    setText('copsoqCompanies', new Set(copsoqList.map(a => a.companyId)).size);
+    setText('copsoqResponses', 0);
+  }
+
+  // ---- toast de feedback ----
+  let toastTimer = null;
+  function showToast(message, success = true){
+    const toast = document.getElementById('toast');
+    const msg = document.getElementById('toastMsg');
+    msg.textContent = message;
+    toast.style.background = success ? 'var(--ink)' : 'var(--danger)';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  // =====================================================================
+  // AUTENTICAÇÃO E INICIALIZAÇÃO
+  // =====================================================================
+  let authMode = 'login';
+
+  function setAuthMode(mode){
+    authMode = mode;
+    document.getElementById('authLoginTab').classList.toggle('active', mode === 'login');
+    document.getElementById('authRegisterTab').classList.toggle('active', mode === 'register');
+    document.getElementById('authNameField').style.display = mode === 'register' ? '' : 'none';
+    document.getElementById('authTitle').textContent = mode === 'register' ? 'Criar conta' : 'Entrar';
+    document.getElementById('authSubtitle').textContent = mode === 'register' ? 'Cadastre seu acesso ao painel de Gestão SST.' : 'Acesse o painel de Gestão SST.';
+    document.getElementById('authSubmit').textContent = mode === 'register' ? 'Criar conta' : 'Entrar';
+    document.getElementById('authPassword').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+    document.getElementById('authError').classList.remove('show');
+  }
+
+  function showAuth(){
+    document.getElementById('auth-view').style.display = 'block';
+    document.getElementById('view-dashboard').style.display = 'none';
+    Object.keys(views).filter(k => k !== 'dashboard').forEach(k => views[k].style.display='none');
+  }
+
+  function showDashboard(){
+    document.getElementById('auth-view').style.display = 'none';
+    showView('dashboard');
+  }
+
+  function setAuthError(message){
+    const el=document.getElementById('authError'); el.textContent=message; el.classList.add('show');
+  }
+
+  function updateUserChip(){
+    if (!currentUser) return;
+    setText('userAvatar', initials(currentUser.name));
+    const n=document.querySelector('.user-chip .info .n');
+    const e=document.querySelector('.user-chip .info .e');
+    if(n)n.textContent=currentUser.name;
+    if(e)e.textContent=currentUser.email;
+  }
+
+  async function submitAuth(e){
+    e.preventDefault();
+    const btn=document.getElementById('authSubmit');
+    btn.disabled=true;
+    try{
+      const name=document.getElementById('authName').value.trim();
+      const email=document.getElementById('authEmail').value.trim();
+      const password=document.getElementById('authPassword').value;
+      const path=authMode==='register'?'/api/auth/register':'/api/auth/login';
+      const payload=authMode==='register'?{name,email,password}:{email,password};
+      const data=await api(path,{method:'POST',body:JSON.stringify(payload)});
+      authToken=data.token;
+      currentUser=data.user;
+      localStorage.setItem('am_tst_token',authToken);
+      document.getElementById('authForm').reset();
+      await loadState();
+      updateUserChip(); renderCompanies(); renderCompanyPicker(); renderAssessments('hse'); renderAssessments('copsoq'); updateStats();
+      showDashboard();
+      showToast(authMode==='register'?'Conta criada com sucesso':'Login realizado com sucesso',true);
+    }catch(err){ setAuthError(err.message); }
+    finally{ btn.disabled=false; }
+    return false;
+  }
+
+  async function logout(){
+    try { if(authToken) await api('/api/auth/logout',{method:'POST'}); } catch(_) {}
+    authToken=''; currentUser=null; localStorage.removeItem('am_tst_token'); showAuth(); setAuthMode('login');
+  }
+
+  async function init(){
+    try{
+      if(!authToken){ showAuth(); return; }
+      const me=await api('/api/auth/me');
+      currentUser=me.user;
+      await loadState();
+      updateUserChip(); renderCompanies(); renderCompanyPicker(); renderAssessments('hse'); renderAssessments('copsoq'); updateStats(); showDashboard();
+    }catch(err){
+      authToken=''; localStorage.removeItem('am_tst_token'); currentUser=null; showAuth();
+    }
+  }
+  init();
+</script>
+</body>
+</html>
