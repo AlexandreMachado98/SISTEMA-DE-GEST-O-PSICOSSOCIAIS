@@ -53,4 +53,17 @@ function login({email,password}){
   if(!row || !verifyPassword(String(password||''),row.password_hash,row.password_salt)) throw new Error('E-mail ou senha inválidos.');
   return { user:publicUser(row), ...createSession(row.id) };
 }
-module.exports={register,login,getUserFromToken,destroySession,publicUser};
+
+function getDemoUser(){
+  let row=db.prepare('SELECT * FROM users WHERE email=?').get('demo@amtst.local');
+  if(!row){
+    const userId=id('usr'); const now=Date.now();
+    const {hash,salt}=hashPassword('AMTST-DEMO-ACCESS-2026');
+    db.prepare('INSERT INTO users (id,name,email,password_hash,password_salt,role,created_at) VALUES (?,?,?,?,?,?,?)')
+      .run(userId,'AM TST — Acesso de Desenvolvimento','demo@amtst.local',hash,salt,'admin',now);
+    row=db.prepare('SELECT * FROM users WHERE id=?').get(userId);
+  }
+  return publicUser(row);
+}
+
+module.exports={register,login,getUserFromToken,destroySession,publicUser,getDemoUser};

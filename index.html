@@ -2212,19 +2212,28 @@
   }
 
   async function logout(){
-    try { if(authToken) await api('/api/auth/logout',{method:'POST'}); } catch(_) {}
+    try {
+      const result = await api('/api/auth/logout',{method:'POST'});
+      if(result?.authDisabled){ showToast('Login desativado durante o desenvolvimento', true); return; }
+    } catch(_) {}
     authToken=''; currentUser=null; localStorage.removeItem('am_tst_token'); showAuth(); setAuthMode('login');
   }
 
   async function init(){
     try{
-      if(!authToken){ showAuth(); return; }
+      // Durante o desenvolvimento o backend fornece um usuário de demonstração automaticamente.
       const me=await api('/api/auth/me');
       currentUser=me.user;
       await loadState();
       updateUserChip(); renderCompanies(); renderCompanyPicker(); renderAssessments('hse'); renderAssessments('copsoq'); updateStats(); showDashboard();
     }catch(err){
-      authToken=''; localStorage.removeItem('am_tst_token'); currentUser=null; showAuth();
+      authToken=''; localStorage.removeItem('am_tst_token'); currentUser=null;
+      // Se a autenticação estiver desativada no backend, não bloqueia o sistema por uma sessão antiga.
+      try{
+        const me=await fetch('/api/auth/me').then(r=>r.json());
+        if(me?.authDisabled){ currentUser=me.user; await loadState(); updateUserChip(); renderCompanies(); renderCompanyPicker(); renderAssessments('hse'); renderAssessments('copsoq'); updateStats(); showDashboard(); return; }
+      }catch(_){}
+      showAuth();
     }
   }
   init();

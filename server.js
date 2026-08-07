@@ -6,11 +6,19 @@ const { db } = require('./db');
 const auth = require('./auth');
 
 const PORT = Number(process.env.PORT || 3000);
+// Modo desenvolvimento: o sistema fica aberto enquanto a construção estiver em andamento.
+// Para reativar login, defina AUTH_DISABLED=false no ambiente.
+const AUTH_DISABLED = String(process.env.AUTH_DISABLED ?? 'true').toLowerCase() !== 'false';
 const PUBLIC = path.join(__dirname, 'public');
 const MIME = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon' };
 function json(res,status,data){ res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}); res.end(JSON.stringify(data)); }
 function getToken(req){ const h=req.headers.authorization||''; return h.startsWith('Bearer ')?h.slice(7):''; }
-function requireAuth(req,res){ const user=auth.getUserFromToken(getToken(req)); if(!user){ json(res,401,{error:'Não autenticado.'}); return null;} return user; }
+function requireAuth(req,res){
+  if(AUTH_DISABLED) return auth.getDemoUser();
+  const user=auth.getUserFromToken(getToken(req));
+  if(!user){ json(res,401,{error:'Não autenticado.'}); return null;}
+  return user;
+}
 function readBody(req){ return new Promise((resolve,reject)=>{let raw=''; req.on('data',c=>{raw+=c;if(raw.length>1e6)req.destroy();}); req.on('end',()=>{if(!raw)return resolve({});try{resolve(JSON.parse(raw));}catch(e){reject(new Error('JSON inválido.'));}});req.on('error',reject);}); }
 function safePath(urlPath){ const decoded=decodeURIComponent(urlPath.split('?')[0]); const target=path.normalize(path.join(PUBLIC,decoded==='/'?'am-tst-sistema.html':decoded)); return target.startsWith(PUBLIC+path.sep)||target===PUBLIC?target:null; }
 function mapCompany(r){return {id:r.id,name:r.name,cnpj:r.cnpj,colaboradores:r.colaboradores,createdAt:r.created_at};}
@@ -51,8 +59,8 @@ async function router(req,res){
   try{
     if(p==='/api/auth/register'&&method==='POST'){const b=await readBody(req); return json(res,201,auth.register(b));}
     if(p==='/api/auth/login'&&method==='POST'){const b=await readBody(req); return json(res,200,auth.login(b));}
-    if(p==='/api/auth/me'&&method==='GET'){const user=requireAuth(req,res); if(!user)return; return json(res,200,{user});}
-    if(p==='/api/auth/logout'&&method==='POST'){const user=requireAuth(req,res); if(!user)return; auth.destroySession(getToken(req)); return json(res,200,{ok:true});}
+    if(p==='/api/auth/me'&&method==='GET'){const user=requireAuth(req,res); if(!user)return; return json(res,200,{user,authDisabled:AUTH_DISABLED});}
+    if(p==='/api/auth/logout'&&method==='POST'){const user=requireAuth(req,res); if(!user)return; if(!AUTH_DISABLED) auth.destroySession(getToken(req)); return json(res,200,{ok:true,authDisabled:AUTH_DISABLED});}
 
     const user=requireAuth(req,res); if(!user)return;
     if(p==='/api/state'&&method==='GET'){

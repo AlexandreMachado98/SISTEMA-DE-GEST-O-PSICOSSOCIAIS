@@ -81,3 +81,10 @@ Administração:
 O projeto foi pensado para rodar localmente ou em um servidor Node. Para produção, use HTTPS/reverse proxy, backup periódico do arquivo SQLite, política de senhas adequada, controle de acesso por função e armazenamento seguro dos segredos do ambiente.
 
 Este sistema é uma base técnica de gestão e **não substitui a análise profissional, assinatura ou responsabilidade legal dos documentos de SST quando exigidas pela legislação aplicável**.
+
+
+## Acesso durante o desenvolvimento
+
+O sistema está temporariamente com a autenticação desativada para facilitar os testes. Ao abrir `http://localhost:3000`, o backend cria/usa automaticamente o usuário de desenvolvimento `AM TST — Acesso de Desenvolvimento`.
+
+Para reativar login e senha antes de colocar o sistema em produção, defina `AUTH_DISABLED=false` no ambiente e reinicie o servidor.
